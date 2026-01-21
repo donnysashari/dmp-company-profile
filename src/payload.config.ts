@@ -2,6 +2,7 @@ import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
+import { About } from './collections/About'
 // import { fileURLToPath } from 'url'
 
 // const filename = fileURLToPath(import.meta.url)
@@ -15,6 +16,7 @@ export default buildConfig({
     },
   },
   collections: [
+    About,
     // Users collection for admin authentication
     {
       slug: 'users',
