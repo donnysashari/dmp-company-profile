@@ -3,6 +3,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { About } from './collections/About'
+import { Pages } from './collections/Pages'
 // import { fileURLToPath } from 'url'
 
 // const filename = fileURLToPath(import.meta.url)
@@ -17,6 +18,7 @@ export default buildConfig({
   },
   collections: [
     About,
+    Pages,
     // Users collection for admin authentication
     {
       slug: 'users',
@@ -312,31 +314,6 @@ export default buildConfig({
           name: 'order',
           type: 'number',
           defaultValue: 0,
-        },
-      ],
-    },
-    // Pages collection
-    {
-      slug: 'pages',
-      admin: {
-        useAsTitle: 'title',
-      },
-      fields: [
-        {
-          name: 'title',
-          type: 'text',
-          required: true,
-        },
-        {
-          name: 'slug',
-          type: 'text',
-          required: true,
-          unique: true,
-        },
-        {
-          name: 'content',
-          type: 'richText',
-          editor: lexicalEditor({}),
         },
       ],
     },
