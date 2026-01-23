@@ -4,6 +4,7 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { About } from './collections/About'
 import { Pages } from './collections/Pages'
+import { Footer } from './collections/Footer'
 // import { fileURLToPath } from 'url'
 
 // const filename = fileURLToPath(import.meta.url)
@@ -19,6 +20,7 @@ export default buildConfig({
   collections: [
     About,
     Pages,
+    Footer,
     // Users collection for admin authentication
     {
       slug: 'users',
