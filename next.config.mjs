@@ -7,6 +7,9 @@ const nextConfig = {
   // experimental: {
   //   reactCompiler: false,
   // }
+  images: {
+    domains: ['api.builder.io'],
+  },
   webpack: (config) => {
     config.resolve.alias['@payload-config'] = path.resolve(process.cwd(), 'src/payload.config.ts')
     return config
