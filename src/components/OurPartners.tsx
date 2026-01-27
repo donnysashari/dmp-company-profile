@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
+import { AnimationManager } from '@/lib/animation-utils'
 import Image from 'next/image'
 
 interface Partner {
@@ -19,30 +19,33 @@ interface OurPartnersProps {
 
 export default function OurPartners({ partners }: OurPartnersProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const animationRef = useRef<GSAPTween | null>(null)
 
   useEffect(() => {
     if (!containerRef.current || !partners || partners.length === 0) return
 
+    const componentId = 'our-partners-animations'
     const container = containerRef.current
     const logoItems = container.querySelectorAll('.logo-item')
     
     if (logoItems.length === 0) return
 
-    // Set initial position and create smooth infinite scroll from right to left
-    gsap.set(logoItems, { x: `-${200 * partners.length}` })
+    // Initialize position using AnimationManager
+    logoItems.forEach(item => {
+      AnimationManager.animateElement(item as HTMLElement, { x: `-${200 * partners.length}` })
+    })
     
-    animationRef.current = gsap.to(logoItems, {
-      x: `+=${200 * partners.length}`, // Move by total width of one set (opposite direction)
-      duration: 20, // Same speed as clients
-      ease: "none",
-      repeat: -1,
+    // Create infinite scroll animation
+    logoItems.forEach((item) => {
+      AnimationManager.animateElement(item as HTMLElement, {
+        x: `+=${200 * partners.length}`,
+        duration: 20,
+        ease: "none",
+        repeat: -1,
+      })
     })
 
     return () => {
-      if (animationRef.current) {
-        animationRef.current.kill()
-      }
+      AnimationManager.cleanup(componentId)
     }
   }, [partners])
 

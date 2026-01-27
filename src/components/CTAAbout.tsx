@@ -1,24 +1,24 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { AnimationManager } from '@/lib/animation-utils'
 import Link from 'next/link'
-
-gsap.registerPlugin(ScrollTrigger)
 
 export default function CTAAbout() {
   const sectionRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const componentId = 'cta-about-animations'
     const section = sectionRef.current
     const content = contentRef.current
 
     if (section && content) {
-      gsap.set(content, { opacity: 0, x: -50 })
+      // Initialize element with hidden state
+      AnimationManager.animateElement(content, { opacity: 0, x: -50 })
 
-      const tl = gsap.timeline({
+      // Create timeline with scroll trigger
+      const tl = AnimationManager.createTimeline(componentId, {
         scrollTrigger: {
           trigger: section,
           start: 'top 80%',
@@ -26,12 +26,19 @@ export default function CTAAbout() {
         }
       })
 
-      tl.to(content, { 
-        opacity: 1, 
-        x: 0, 
-        duration: 1, 
-        ease: 'power3.out' 
-      })
+      if (tl) {
+        tl.to(content, { 
+          opacity: 1, 
+          x: 0, 
+          duration: 1, 
+          ease: 'power3.out' 
+        })
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      AnimationManager.cleanup(componentId)
     }
   }, [])
 

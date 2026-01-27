@@ -1,16 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { AnimationManager } from '@/lib/animation-utils'
 import Header from '@/components/Header'
+import PageHeader from '@/components/PageHeader'
+import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Service } from '@/types/service'
 
-gsap.registerPlugin(ScrollTrigger)
-
 export default function ServicesPage() {
-  const heroRef = useRef<HTMLElement>(null)
   const servicesRef = useRef<HTMLDivElement>(null)
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -207,23 +205,41 @@ export default function ServicesPage() {
   useEffect(() => {
     if (loading) return
 
+    const componentId = 'services-page-animations'
+
     // Hero animation
-    const tl = gsap.timeline({ delay: 0.5 })
-    tl.from('.hero-content', {
-      y: 100,
-      opacity: 0,
-      duration: 1.2,
-      ease: 'power3.out'
-    })
+    const heroContent = document.querySelector('.hero-content')
+    if (heroContent) {
+      AnimationManager.animateElement(heroContent as HTMLElement, { y: 100, opacity: 0 })
+      
+      const heroTimeline = AnimationManager.createTimeline(`${componentId}-hero`, { delay: 0.5 })
+      if (heroTimeline) {
+        heroTimeline.to(heroContent, {
+          y: 0,
+          opacity: 1,
+          duration: 1.2,
+          ease: 'power3.out'
+        })
+      }
+    }
 
     // Services animation
-    gsap.set('.service-card', { opacity: 0, y: 50 })
+    const serviceCards = document.querySelectorAll('.service-card')
+    serviceCards.forEach(card => {
+      AnimationManager.animateElement(card as HTMLElement, { opacity: 0, y: 50 })
+    })
     
-    ScrollTrigger.create({
-      trigger: servicesRef.current,
-      start: 'top 80%',
-      onEnter: () => {
-        gsap.to('.service-card', {
+    if (servicesRef.current) {
+      const servicesTimeline = AnimationManager.createTimeline(`${componentId}-services`, {
+        scrollTrigger: {
+          trigger: servicesRef.current,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
+        }
+      })
+      
+      if (servicesTimeline) {
+        servicesTimeline.to(serviceCards, {
           opacity: 1,
           y: 0,
           duration: 0.8,
@@ -231,10 +247,10 @@ export default function ServicesPage() {
           ease: 'power3.out'
         })
       }
-    })
+    }
 
     return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+      AnimationManager.cleanup(componentId)
     }
   }, [loading])
 
@@ -247,70 +263,29 @@ export default function ServicesPage() {
     return service.benefits?.map(b => b.benefit) || []
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">Loading services...</p>
-        </div>
-      </main>
-    )
-  }
+  // Remove loading check to show content directly with page transition
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#F8F8F8]">
       <Header />
       
-      {/* Hero Section */}
-      <section 
-        ref={heroRef}
-        className="relative pt-24 pb-16 bg-linear-to-br from-blue-900 via-purple-900 to-indigo-900 text-white"
-      >
-        <div className="container mx-auto px-6">
-          <div className="hero-content max-w-4xl">
-            {/* Breadcrumb */}
-            <nav className="mb-8">
-              <Link href="/" className="text-blue-400 hover:text-blue-300">
-                Home
-              </Link>
-              <span className="mx-2">→</span>
-              <span className="text-gray-300">Services</span>
-            </nav>
-
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Our Services
-            </h1>
-            
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl">
-              Digital Mahadata Prima menyediakan solusi teknologi terdepan untuk transformasi digital bisnis Anda. 
-              Dari AI hingga otomatisasi, kami memiliki keahlian untuk mengoptimalkan operasional perusahaan Anda.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/contact">
-                <button className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-                  Konsultasi Gratis
-                </button>
-              </Link>
-              <Link href="/portfolio">
-                <button className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-                  Lihat Portfolio
-                </button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Page Header */}
+      <PageHeader 
+        title="Layanan Kami"
+        subtitle="Digital Mahadata Prima menyediakan solusi teknologi terdepan untuk transformasi digital bisnis Anda. Dari AI hingga otomatisasi, kami memiliki keahlian untuk mengoptimalkan operasional perusahaan Anda."
+        breadcrumbs={[
+          { label: 'Layanan' }
+        ]}
+      />
 
       {/* Services Section */}
-      <section ref={servicesRef} className="py-20">
+      <section ref={servicesRef} className="py-20 bg-[#F8F8F8]">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 font-figtree">
               Layanan Unggulan Kami
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto font-plus-jakarta">
               Kami menawarkan solusi teknologi komprehensif yang telah terbukti membantu berbagai industri 
               mencapai transformasi digital yang sukses.
             </p>
@@ -326,12 +301,12 @@ export default function ServicesPage() {
                   <div className={index % 2 === 1 ? 'lg:col-start-2' : ''}>
                     <div className="flex items-center mb-6">
                       <div className="text-4xl mr-4">{service.icon}</div>
-                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900">
+                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900 font-figtree">
                         {service.title}
                       </h3>
                     </div>
                     
-                    <p className="text-lg text-gray-600 mb-8">
+                    <p className="text-lg text-gray-600 mb-8 font-plus-jakarta">
                       {service.description}
                     </p>
 
@@ -461,6 +436,9 @@ export default function ServicesPage() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </main>
   )
 }

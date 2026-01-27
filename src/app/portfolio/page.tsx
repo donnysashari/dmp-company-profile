@@ -1,22 +1,98 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useEffect, useRef, useState, useMemo } from 'react'
+import { AnimationManager } from '@/lib/animation-utils'
 import Header from '@/components/Header'
+import PageHeader from '@/components/PageHeader'
+import SimpleFooter from '@/components/SimpleFooter'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Portfolio } from '@/types/portfolio'
 
-gsap.registerPlugin(ScrollTrigger)
+// Inline simple data hook to avoid import issues
+function usePortfolioData() {
+  const [data, setData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const hasLoadedRef = useRef(false)
+
+  const fallbackData = {
+    docs: [
+      {
+        id: 'mock-1',
+        title: 'Dashboard Analytics E-Commerce',
+        slug: 'ecommerce-analytics-dashboard',
+        description: 'Dashboard analytics real-time untuk jaringan retail besar dengan 500+ toko',
+        client: 'RetailMax Indonesia',
+        category: 'analytics',
+        technologies: [
+          { technology: 'React' },
+          { technology: 'Node.js' },
+          { technology: 'PostgreSQL' }
+        ],
+        featured: true,
+        completedAt: '2023-12-15'
+      },
+      {
+        id: 'mock-2',
+        title: 'Aplikasi Mobile Banking',
+        slug: 'banking-mobile-app',
+        description: 'Aplikasi mobile banking aman dengan autentikasi biometrik',
+        client: 'Bank Mandiri',
+        category: 'mobile',
+        technologies: [
+          { technology: 'React Native' },
+          { technology: 'Node.js' },
+          { technology: 'MongoDB' }
+        ],
+        featured: true,
+        completedAt: '2024-01-10'
+      }
+    ]
+  }
+
+  const fetchData = async () => {
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
+
+    setIsLoading(true)
+    
+    try {
+      const response = await fetch('/api/portfolio', {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        setData(result)
+      } else {
+        throw new Error(`HTTP ${response.status}`)
+      }
+    } catch (err) {
+      console.warn('Using fallback portfolio data:', err)
+      setData(fallbackData)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!hasLoadedRef.current) {
+      fetchData()
+    }
+  }, [])
+
+  return { data, isLoading }
+}
+import { Portfolio } from '@/types/portfolio'
 
 // Mock data as fallback - will be combined with Payload CMS data
 const mockPortfolioItems: Portfolio[] = [
   {
     id: 'mock-1',
-    title: 'E-Commerce Analytics Dashboard',
+    title: 'Dashboard Analytics E-Commerce',
     slug: 'ecommerce-analytics-dashboard',
-    description: 'Real-time analytics dashboard for major retail chain with 500+ stores',
+    description: 'Dashboard analytics real-time untuk jaringan retail besar dengan 500+ toko',
     client: 'RetailMax Indonesia',
     category: 'analytics',
     technologies: [
@@ -32,9 +108,9 @@ const mockPortfolioItems: Portfolio[] = [
   },
   {
     id: 'mock-2',
-    title: 'Banking Mobile Application',
+    title: 'Aplikasi Mobile Banking',
     slug: 'banking-mobile-app',
-    description: 'Secure mobile banking app with biometric authentication',
+    description: 'Aplikasi mobile banking aman dengan autentikasi biometrik',
     client: 'Bank Mandiri',
     category: 'mobile',
     technologies: [
@@ -48,9 +124,9 @@ const mockPortfolioItems: Portfolio[] = [
   },
   {
     id: 'mock-3',
-    title: 'Cloud Infrastructure Migration',
+    title: 'Migrasi Infrastruktur Cloud',
     slug: 'cloud-migration-project',
-    description: 'Complete migration of legacy systems to cloud infrastructure',
+    description: 'Migrasi lengkap sistem legacy ke infrastruktur cloud',
     client: 'PT Telkom Indonesia',
     category: 'cloud',
     technologies: [
@@ -65,9 +141,9 @@ const mockPortfolioItems: Portfolio[] = [
   },
   {
     id: 'mock-4',
-    title: 'Healthcare Management System',
+    title: 'Sistem Manajemen Rumah Sakit',
     slug: 'healthcare-management-system',
-    description: 'Comprehensive hospital management system with patient portal',
+    description: 'Sistem manajemen rumah sakit komprehensif dengan portal pasien',
     client: 'RS Siloam',
     category: 'web',
     technologies: [
@@ -83,85 +159,54 @@ const mockPortfolioItems: Portfolio[] = [
 ]
 
 const categories = [
-  { label: 'All Projects', value: 'all' },
-  { label: 'Web Development', value: 'web' },
-  { label: 'Mobile Apps', value: 'mobile' },
-  { label: 'Data Analytics', value: 'analytics' },
-  { label: 'Cloud Solutions', value: 'cloud' }
+  { label: 'Semua Proyek', value: 'all' },
+  { label: 'Pengembangan Web', value: 'web' },
+  { label: 'Aplikasi Mobile', value: 'mobile' },
+  { label: 'Analisis Data', value: 'analytics' },
+  { label: 'Solusi Cloud', value: 'cloud' }
 ]
 
 export default function PortfolioPage() {
-  const heroRef = useRef<HTMLElement>(null)
   const portfolioRef = useRef<HTMLDivElement>(null)
-  const [portfolioItems, setPortfolioItems] = useState<Portfolio[]>(mockPortfolioItems)
-  const [filteredItems, setFilteredItems] = useState<Portfolio[]>(mockPortfolioItems)
+  const { data: portfolioData, isLoading } = usePortfolioData()
   const [activeCategory, setActiveCategory] = useState('all')
 
-  // Fetch portfolio data from CMS
-  useEffect(() => {
-    const fetchPortfolioData = async () => {
-      try {
-        const response = await fetch('/api/portfolio')
-        if (response.ok) {
-          const data = await response.json()
-          // Combine CMS data with mock data, prioritizing CMS data
-          const cmsItems = data.docs || []
-          const combinedItems = [...cmsItems, ...mockPortfolioItems]
-          
-          // Remove duplicates based on slug
-          const uniqueItems = combinedItems.filter((item, index, self) =>
-            index === self.findIndex(t => t.slug === item.slug)
-          )
-          
-          setPortfolioItems(uniqueItems)
-          setFilteredItems(uniqueItems)
-        } else {
-          console.log('Using fallback data')
-        }
-      } catch (error) {
-        console.error('Error fetching portfolio data:', error)
-        console.log('Using fallback data')
-      }
+  // Calculate filtered items based on category and data
+  const filteredItems = useMemo(() => {
+    if (!portfolioData?.docs) return []
+    
+    if (activeCategory === 'all') {
+      return portfolioData.docs
+    } else {
+      return portfolioData.docs.filter((item: Portfolio) => item.category === activeCategory)
     }
-
-    fetchPortfolioData()
-  }, [])
+  }, [portfolioData?.docs, activeCategory])
 
   // Filter portfolio items
   const filterItems = (category: string) => {
     setActiveCategory(category)
-    if (category === 'all') {
-      setFilteredItems(portfolioItems)
-    } else {
-      const filtered = portfolioItems.filter(item => item.category === category)
-      setFilteredItems(filtered)
-    }
   }
 
   useEffect(() => {
-    // Hero animation
-    const tl = gsap.timeline({ delay: 0.5 })
-    tl.from('.hero-title', {
-      y: 100,
-      opacity: 0,
-      duration: 1.2,
-      ease: 'power3.out'
-    })
-    .from('.hero-subtitle', {
-      y: 50,
-      opacity: 0,
-      duration: 1,
-      ease: 'power3.out'
-    }, '-=0.6')
-
-    // Portfolio items animation
-    gsap.set('.portfolio-item', { opacity: 0, y: 50 })
+    const componentId = 'portfolio-page-animations'
     
-    ScrollTrigger.create({
-      trigger: portfolioRef.current,
-      start: 'top 80%',
-      onEnter: () => {
-        gsap.to('.portfolio-item', {
+    // Portfolio items animation
+    const portfolioItems = document.querySelectorAll('.portfolio-item')
+    portfolioItems.forEach(item => {
+      AnimationManager.animateElement(item as HTMLElement, { opacity: 0, y: 50 })
+    })
+    
+    if (portfolioRef.current) {
+      const itemsTimeline = AnimationManager.createTimeline(`${componentId}-items`, {
+        scrollTrigger: {
+          trigger: portfolioRef.current,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
+        }
+      })
+      
+      if (itemsTimeline) {
+        itemsTimeline.to(portfolioItems, {
           opacity: 1,
           y: 0,
           duration: 0.8,
@@ -169,34 +214,28 @@ export default function PortfolioPage() {
           ease: 'power3.out'
         })
       }
-    })
+    }
 
     return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+      AnimationManager.cleanup(componentId)
     }
   }, [])
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#F8F8F8]">
       <Header />
       
-      {/* Hero Section */}
-      <section 
-        ref={heroRef}
-        className="relative pt-24 pb-16 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white"
-      >
-        <div className="container mx-auto px-6 text-center">
-          <h1 className="hero-title text-5xl md:text-6xl font-bold mb-6">
-            Our <span className="text-blue-400">Portfolio</span>
-          </h1>
-          <p className="hero-subtitle text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
-            Discover how we&apos;ve helped businesses transform through innovative digital solutions
-          </p>
-        </div>
-      </section>
+      {/* Page Header */}
+      <PageHeader 
+        title="Portofolio Kami"
+        subtitle="Temukan bagaimana kami telah membantu bisnis bertransformasi melalui solusi digital inovatif"
+        breadcrumbs={[
+          { label: 'Portofolio' }
+        ]}
+      />
 
       {/* Portfolio Grid */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-[#F8F8F8]">
         <div className="container mx-auto px-6">
           {/* Filter Tabs */}
           <div className="flex flex-wrap justify-center gap-4 mb-12">
@@ -204,7 +243,7 @@ export default function PortfolioPage() {
               <button
                 key={category.value}
                 onClick={() => filterItems(category.value)}
-                className={`px-6 py-3 rounded-full transition-all duration-300 shadow-md ${
+                className={`px-6 py-3 rounded-full transition-all duration-300 shadow-md font-plus-jakarta ${
                   activeCategory === category.value
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-blue-600 hover:text-white'
@@ -214,6 +253,15 @@ export default function PortfolioPage() {
               </button>
             ))}
           </div>
+
+          {/* Portfolio items will show directly without loading spinner */}
+          
+          {/* No Data State */}
+          {!isLoading && filteredItems.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-600 font-plus-jakarta">Tidak ada portofolio yang ditemukan.</p>
+            </div>
+          )}
 
           {/* Portfolio Items */}
           <div ref={portfolioRef} className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -245,16 +293,16 @@ export default function PortfolioPage() {
                   
                   {/* Content */}
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors font-figtree">
                       {item.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">
+                    <p className="text-gray-600 mb-4 line-clamp-2 font-plus-jakarta">
                       {item.description}
                     </p>
                     
                     {/* Client */}
-                    <p className="text-sm text-gray-500 mb-4">
-                      <span className="font-medium">Client:</span> {item.client}
+                    <p className="text-sm text-gray-500 mb-4 font-plus-jakarta">
+                      <span className="font-medium">Klien:</span> {item.client}
                     </p>
                     
                     {/* Technologies */}
@@ -262,13 +310,13 @@ export default function PortfolioPage() {
                       {item.technologies?.slice(0, 3).map((tech, index) => (
                         <span
                           key={index}
-                          className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                          className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded font-plus-jakarta"
                         >
                           {tech.technology}
                         </span>
                       ))}
                       {(item.technologies?.length || 0) > 3 && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 font-plus-jakarta">
                           +{(item.technologies?.length || 0) - 3} more
                         </span>
                       )}
@@ -284,19 +332,22 @@ export default function PortfolioPage() {
       {/* CTA Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            Ready to Start Your Project?
+          <h2 className="text-4xl font-bold text-gray-900 mb-6 font-figtree">
+            Siap Memulai Proyek Anda?
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Let&apos;s discuss how we can help transform your business with innovative digital solutions.
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto font-plus-jakarta">
+            Mari diskusikan bagaimana kami dapat membantu mentransformasi bisnis Anda dengan solusi digital inovatif.
           </p>
           <Link href="/contact">
-            <button className="bg-blue-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-blue-700 hover:scale-105 transition-all duration-300">
-              Get In Touch
+            <button className="bg-blue-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-blue-700 hover:scale-105 transition-all duration-300 font-plus-jakarta">
+              Hubungi Kami
             </button>
           </Link>
         </div>
       </section>
+
+      {/* Footer */}
+      <SimpleFooter />
     </main>
   )
 }

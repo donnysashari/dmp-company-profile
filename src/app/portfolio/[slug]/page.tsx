@@ -1,14 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { AnimationManager } from '@/lib/animation-utils'
 import Header from '@/components/Header'
+import PageHeader from '@/components/PageHeader'
+import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Portfolio } from '@/types/portfolio'
 
-gsap.registerPlugin(ScrollTrigger)
+  // Remove loading check to show content directly with page transition
+
+  // Not found state notFound } from 'next/navigation'
+import { Portfolio } from '@/types/portfolio'
 
 // Mock data as fallback
 interface FallbackPortfolio {
@@ -147,7 +150,6 @@ interface PortfolioDetailPageProps {
 }
 
 export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps) {
-  const heroRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [project, setProject] = useState<Portfolio | FallbackPortfolio | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -198,27 +200,29 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
     fetchProject()
   }, [params])
 
-  // GSAP Animation Effect - moved here to maintain hook order
+  // Animation Effect using AnimationManager
   useEffect(() => {
     if (!project || isLoading) return
 
-    // Hero animation
-    const tl = gsap.timeline({ delay: 0.5 })
-    tl.from('.hero-content', {
-      y: 100,
-      opacity: 0,
-      duration: 1.2,
-      ease: 'power3.out'
-    })
+    const componentId = 'portfolio-detail-animations'
 
     // Content animation
-    gsap.set('.content-section', { opacity: 0, y: 50 })
+    const contentSections = document.querySelectorAll('.content-section')
+    contentSections.forEach(section => {
+      AnimationManager.animateElement(section as HTMLElement, { opacity: 0, y: 50 })
+    })
     
-    ScrollTrigger.create({
-      trigger: contentRef.current,
-      start: 'top 80%',
-      onEnter: () => {
-        gsap.to('.content-section', {
+    if (contentRef.current) {
+      const contentTimeline = AnimationManager.createTimeline(`${componentId}-content`, {
+        scrollTrigger: {
+          trigger: contentRef.current,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
+        }
+      })
+      
+      if (contentTimeline) {
+        contentTimeline.to(contentSections, {
           opacity: 1,
           y: 0,
           duration: 0.8,
@@ -226,10 +230,10 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
           ease: 'power3.out'
         })
       }
-    })
+    }
 
     return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+      AnimationManager.cleanup(componentId)
     }
   }, [project, isLoading])
 
@@ -311,75 +315,71 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#F8F8F8]">
       <Header />
       
-      {/* Hero Section */}
-      <section 
-        ref={heroRef}
-        className="relative pt-24 pb-16 bg-linear-to-br from-blue-900 via-purple-900 to-indigo-900 text-white"
-      >
-        <div className="container mx-auto px-6">
-          <div className="hero-content max-w-4xl">
-            {/* Breadcrumb */}
-            <nav className="mb-8">
-              <Link href="/portfolio" className="text-blue-400 hover:text-blue-300">
-                Portfolio
-              </Link>
-              <span className="mx-2">→</span>
-              <span className="text-gray-300">{project.title}</span>
-            </nav>
+      {/* Page Header */}
+      <PageHeader 
+        title={project.title}
+        subtitle={`${project.client} • ${project.category}`}
+        breadcrumbs={[
+          { label: 'Portofolio', href: '/portfolio' },
+          { label: project.title }
+        ]}
+      />
 
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              {project.title}
-            </h1>
-            
-            <div className="grid md:grid-cols-2 gap-8 mb-8">
-              <div>
-                <h3 className="text-blue-400 font-semibold mb-2">Client</h3>
-                <p className="text-xl">{project.client}</p>
+      {/* Project Info Section */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-blue-600 font-semibold mb-2 font-figtree">Klien</h3>
+                <p className="text-lg font-plus-jakarta">{project.client}</p>
               </div>
-              <div>
-                <h3 className="text-blue-400 font-semibold mb-2">Category</h3>
-                <p className="text-xl">{project.category}</p>
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-blue-600 font-semibold mb-2 font-figtree">Kategori</h3>
+                <p className="text-lg font-plus-jakarta">{project.category}</p>
               </div>
-              <div>
-                <h3 className="text-blue-400 font-semibold mb-2">Completed</h3>
-                <p className="text-xl">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-blue-600 font-semibold mb-2 font-figtree">Selesai</h3>
+                <p className="text-lg font-plus-jakarta">
                   {project.completedAt 
-                    ? new Date(project.completedAt).toLocaleDateString('en-US', {
+                    ? new Date(project.completedAt).toLocaleDateString('id-ID', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
                       })
-                    : 'Recently Completed'
+                    : 'Baru-baru ini'
                   }
                 </p>
               </div>
               {project.projectUrl && (
-                <div>
-                  <h3 className="text-blue-400 font-semibold mb-2">Live Project</h3>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-blue-600 font-semibold mb-2 font-figtree">Proyek Live</h3>
                   <a 
                     href={project.projectUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xl hover:text-blue-400 transition-colors"
+                    className="text-lg hover:text-blue-600 transition-colors font-plus-jakarta"
                   >
-                    View Live →
+                    Lihat Live →
                   </a>
                 </div>
               )}
             </div>
             
-            <p className="text-xl text-gray-300">
-              {project.description}
-            </p>
+            <div className="prose prose-lg max-w-none">
+              <p className="text-xl text-gray-700 leading-relaxed font-plus-jakarta">
+                {project.description}
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Main Content */}
-      <section ref={contentRef} className="py-20">
+      <section ref={contentRef} className="py-20 bg-[#F8F8F8]">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto space-y-16">
             
@@ -389,7 +389,7 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
                 {getProjectImages().map((image: string, index: number) => (
                   <div key={index} className="aspect-video bg-gray-200 rounded-2xl overflow-hidden">
                     <div className="w-full h-full bg-linear-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                      <span className="text-gray-600">Project Image {index + 1}</span>
+                      <span className="text-gray-600 font-plus-jakarta">Gambar Proyek {index + 1}</span>
                     </div>
                   </div>
                 ))}
@@ -398,28 +398,28 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
 
             {/* Challenge */}
             <div className="content-section">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">The Challenge</h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 font-figtree">Tantangan</h2>
+              <p className="text-lg text-gray-600 leading-relaxed font-plus-jakarta">
                 {project.challenge}
               </p>
             </div>
 
             {/* Solution */}
             <div className="content-section">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Solution</h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 font-figtree">Solusi Kami</h2>
+              <p className="text-lg text-gray-600 leading-relaxed font-plus-jakarta">
                 {project.solution}
               </p>
             </div>
 
             {/* Technologies */}
             <div className="content-section">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Technologies Used</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 font-figtree">Teknologi yang Digunakan</h2>
               <div className="flex flex-wrap gap-3">
                 {getProjectTechnologies().map((tech: string, index: number) => (
                   <span
                     key={index}
-                    className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-medium"
+                    className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-medium font-plus-jakarta"
                   >
                     {tech}
                   </span>
@@ -429,14 +429,14 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
 
             {/* Results */}
             <div className="content-section">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Results</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 font-figtree">Hasil</h2>
               <div className="grid md:grid-cols-2 gap-6">
                 {getProjectResults().map((result: string, index: number) => (
                   <div key={index} className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center shrink-0 mt-1">
                       <span className="text-white text-sm">✓</span>
                     </div>
-                    <p className="text-gray-700">{result}</p>
+                    <p className="text-gray-700 font-plus-jakarta">{result}</p>
                   </div>
                 ))}
               </div>
@@ -444,19 +444,19 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
 
             {/* Testimonial */}
             {project.testimonial && (
-              <div className="content-section bg-gray-50 rounded-2xl p-8">
-                <blockquote className="text-xl italic text-gray-700 mb-6">
+              <div className="content-section bg-white rounded-2xl p-8 shadow-lg">
+                <blockquote className="text-xl italic text-gray-700 mb-6 font-plus-jakarta">
                   &ldquo;{project.testimonial.quote}&rdquo;
                 </blockquote>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-white font-bold">
+                    <span className="text-white font-bold font-plus-jakarta">
                       {project.testimonial?.author?.split(' ').map((n: string) => n[0]).join('') || 'C'}
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{project.testimonial.author}</p>
-                    <p className="text-gray-600">{project.testimonial.position}</p>
+                    <p className="font-semibold text-gray-900 font-figtree">{project.testimonial.author}</p>
+                    <p className="text-gray-600 font-plus-jakarta">{project.testimonial.position}</p>
                   </div>
                 </div>
               </div>
@@ -469,24 +469,27 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
       {/* Next Project CTA */}
       <section className="py-20 bg-blue-600 text-white">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">Interested in Similar Results?</h2>
-          <p className="text-xl mb-8 opacity-90">
-            Let&apos;s discuss how we can help transform your business.
+          <h2 className="text-3xl font-bold mb-6 font-figtree">Tertarik dengan Hasil Serupa?</h2>
+          <p className="text-xl mb-8 opacity-90 font-plus-jakarta">
+            Mari diskusikan bagaimana kami dapat membantu mentransformasi bisnis Anda.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/contact">
-              <button className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-                Start Your Project
+              <button className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors font-plus-jakarta">
+                Mulai Proyek Anda
               </button>
             </Link>
             <Link href="/portfolio">
-              <button className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-                View More Projects
+              <button className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-blue-600 transition-colors font-plus-jakarta">
+                Lihat Proyek Lainnya
               </button>
             </Link>
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </main>
   )
 }

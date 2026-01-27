@@ -1,30 +1,74 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
-import Image from 'next/image'
+import { useEffect, useRef, useMemo } from 'react'
+import { AnimationManager } from '@/lib/animation-utils'
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const subtitleRef = useRef<HTMLParagraphElement>(null)
+  const dynamicTextRef = useRef<HTMLSpanElement>(null)
+
+  const dynamicTexts = useMemo(() => [
+    "Bisnis dan Institusi Anda",
+    "Korporasi, Pemerintah, dan Pendidikan",
+    "Operasional yang Lebih Efisien", 
+    "Inovasi di Era Industri 4.0",
+  ], [])
 
   useEffect(() => {
-    const tl = gsap.timeline({ delay: 0.5 })
+    const componentId = 'hero-animations'
+    
+    const initAnimations = () => {
+      // Set initial state for subtitle
+      if (subtitleRef.current) {
+        AnimationManager.animateElement(subtitleRef.current, {
+          y: 50,
+          opacity: 0,
+          duration: 0
+        })
+      }
+      
+      // Split text animation for title
+      const splitTl = AnimationManager.splitTextAnimation(titleRef.current, {
+        stagger: 0.1,
+        duration: 1.5,
+        ease: "power4.out",
+        delay: 0.5
+      })
+      
+      // Animate subtitle
+      if (splitTl && subtitleRef.current) {
+        splitTl.to(subtitleRef.current, {
+          y: 0,
+          opacity: 1,
+          duration: 1,
+          ease: 'power3.out'
+        }, '-=0.6')
+      }
+      
+      // Start text rotation
+      AnimationManager.rotateText(
+        dynamicTextRef.current, 
+        dynamicTexts, 
+        3000, 
+        `${componentId}-rotation`
+      )
+    }
 
-    tl.from(titleRef.current, {
-      y: 100,
-      opacity: 0,
-      duration: 1.2,
-      ease: 'power3.out'
-    })
-    .from(subtitleRef.current, {
-      y: 50,
-      opacity: 0,
-      duration: 1,
-      ease: 'power3.out'
-    }, '-=0.6')
-  }, [])
+    // Initialize animations
+    initAnimations()
+
+    // Handle visibility changes (fixes tab switching bugs)
+    const removeVisibilityHandler = AnimationManager.handleVisibilityChange(initAnimations)
+
+    return () => {
+      // Cleanup all animations for this component
+      AnimationManager.cleanup(componentId)
+      AnimationManager.cleanup(`${componentId}-rotation`)
+      removeVisibilityHandler()
+    }
+  }, [dynamicTexts])
 
   return (
     <section 
@@ -32,57 +76,50 @@ export default function Hero() {
       ref={heroRef}
       className="relative min-h-screen pt-[100px] pb-20 overflow-hidden bg-white"
     >
-      {/* Background Gradient Circles */}
-      <div className="absolute inset-0 opacity-10">
-        <svg className="absolute left-[86px] top-0" width="1250" height="817" viewBox="0 0 1250 817" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g opacity="0.1">
-            <g filter="url(#filter0_f_697_3092)">
-              <circle cx="892" cy="459" r="358" fill="#3094D6"/>
-            </g>
-            <g filter="url(#filter1_f_697_3092)">
-              <circle cx="264.5" cy="357.5" r="264.5" fill="#2082BE"/>
-            </g>
-            <g filter="url(#filter2_f_697_3092)">
-              <ellipse cx="562.5" cy="336.5" rx="206.5" ry="336.5" fill="white"/>
-            </g>
-          </g>
-          <defs>
-            <filter id="filter0_f_697_3092" x="334" y="-99" width="1116" height="1116" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-              <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-              <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-              <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_697_3092"/>
-            </filter>
-            <filter id="filter1_f_697_3092" x="-100" y="-7" width="729" height="729" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-              <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-              <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-              <feGaussianBlur stdDeviation="50" result="effect1_foregroundBlur_697_3092"/>
-            </filter>
-            <filter id="filter2_f_697_3092" x="156" y="-200" width="813" height="1073" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-              <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-              <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-              <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_697_3092"/>
-            </filter>
-          </defs>
-        </svg>
-      </div>
-
-      {/* Background Grid Pattern */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <Image
-          src="/grid-pattern.svg"
-          alt="Grid Pattern Background"
-          fill
-          className="object-cover"
+      {/* Grid Dot Background with Gradient Transparency */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle, #3094D6 2px, transparent 2px)`,
+            backgroundSize: '40px 40px',
+            backgroundPosition: '0 0',
+            mask: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.05) 80%, rgba(0,0,0,0) 100%)',
+            WebkitMask: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.05) 80%, rgba(0,0,0,0) 100%)'
+          }}
         />
       </div>
 
-      {/* Hero Gradient Background */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <Image
-          src="/hero-gradient.svg"
-          alt="Hero Gradient Background"
-          fill
-          className="object-cover"
+      {/* Large Blurred Circles Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Circle 1 - 700px */}
+        <div 
+          className="absolute rounded-full"
+          style={{
+            width: '700px',
+            height: '700px',
+            background: '#3094D6',
+            filter: 'blur(200px)',
+            opacity: 0.15,
+            top: '10%',
+            right: '15%',
+            transform: 'translate(50%, -30%)'
+          }}
+        />
+        
+        {/* Circle 2 - 500px */}
+        <div 
+          className="absolute rounded-full"
+          style={{
+            width: '500px',
+            height: '500px',
+            background: '#2082BE',
+            filter: 'blur(200px)',
+            opacity: 0.2,
+            bottom: '20%',
+            left: '10%',
+            transform: 'translate(-30%, 50%)'
+          }}
         />
       </div>
 
@@ -101,10 +138,19 @@ export default function Hero() {
           <h1 
             ref={titleRef}
             className="font-figtree text-4xl w-[810px] md:text-[64px] font-semibold leading-normal text-center text-[#4C5C6E]"
+            style={{
+              overflow: 'hidden'
+            }}
           >
-            Transformasi Digital untuk{' '}
-            <span className="text-[#47A6F1]">Bisnis</span> dan{' '}
-            <span className="text-[#47A6F1]">Institusi Anda</span>
+            <span style={{ display: 'inline-block', overflow: 'hidden' }}>Transformasi</span>{' '}
+            <span style={{ display: 'inline-block', overflow: 'hidden' }}>Digital</span>{' '}
+            <span style={{ display: 'inline-block', overflow: 'hidden' }}>untuk</span>{' '}
+            <span 
+              ref={dynamicTextRef}
+              className="text-[#47A6F1] inline-block"
+            >
+              Bisnis dan Institusi Anda
+            </span>
           </h1>
 
           {/* Subtitle */}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans, Figtree } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
+import PageTransitionProvider from "@/components/PageTransitionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,7 +49,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${plusJakartaSans.variable} ${figtree.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <Script src="/page-transition.js" strategy="beforeInteractive" />
+        <PageTransitionProvider>
+          {children}
+        </PageTransitionProvider>
       </body>
     </html>
   );

@@ -1,11 +1,8 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { AnimationManager } from '@/lib/animation-utils'
 import Link from 'next/link'
-
-gsap.registerPlugin(ScrollTrigger)
 
 interface PortfolioItem {
   id: string
@@ -53,14 +50,23 @@ export default function Portfolio() {
   ]
 
   useEffect(() => {
+    const componentId = 'portfolio-animations'
     const section = sectionRef.current
     const header = headerRef.current
     const items = itemsRef.current
 
     if (section && header && items) {
-      gsap.set([header, '.portfolio-item'], { opacity: 0, y: 30 })
+      // Initialize elements with hidden state
+      AnimationManager.animateElement(header, { opacity: 0, y: 30 })
+      
+      // Get all portfolio items and set initial state
+      const portfolioItems = items.querySelectorAll('.portfolio-item')
+      portfolioItems.forEach(item => {
+        AnimationManager.animateElement(item as HTMLElement, { opacity: 0, y: 30 })
+      })
 
-      const tl = gsap.timeline({
+      // Create main timeline with scroll trigger
+      const tl = AnimationManager.createTimeline(componentId, {
         scrollTrigger: {
           trigger: section,
           start: 'top 80%',
@@ -68,19 +74,26 @@ export default function Portfolio() {
         }
       })
 
-      tl.to(header, { 
-        opacity: 1, 
-        y: 0, 
-        duration: 0.8, 
-        ease: 'power3.out' 
-      })
-      .to('.portfolio-item', { 
-        opacity: 1, 
-        y: 0, 
-        duration: 0.6, 
-        stagger: 0.1, 
-        ease: 'power3.out' 
-      }, '-=0.4')
+      if (tl) {
+        tl.to(header, { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.8, 
+          ease: 'power3.out' 
+        })
+        .to(portfolioItems, { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.6, 
+          stagger: 0.1, 
+          ease: 'power3.out' 
+        }, '-=0.4')
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      AnimationManager.cleanup(componentId)
     }
   }, [])
 

@@ -1,13 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { AnimationManager } from '@/lib/animation-utils'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Service } from '../types/service'
-
-gsap.registerPlugin(ScrollTrigger)
 
 // Static fallback services to avoid dependency issues
 const FALLBACK_SERVICES: Service[] = [
@@ -151,13 +148,22 @@ export default function Services() {
   useEffect(() => {
     if (loading) return
 
+    const componentId = 'services-animations'
     const section = sectionRef.current
     const title = titleRef.current
 
     if (section && title) {
-      gsap.set([title, '.service-card'], { opacity: 0, y: 50 })
+      // Initialize elements with hidden state
+      AnimationManager.animateElement(title, { opacity: 0, y: 50 })
+      
+      // Get all service cards and set initial state
+      const serviceCards = section.querySelectorAll('.service-card')
+      serviceCards.forEach(card => {
+        AnimationManager.animateElement(card as HTMLElement, { opacity: 0, y: 50 })
+      })
 
-      const tl = gsap.timeline({
+      // Create main timeline with scroll trigger
+      const tl = AnimationManager.createTimeline(componentId, {
         scrollTrigger: {
           trigger: section,
           start: 'top 80%',
@@ -165,14 +171,21 @@ export default function Services() {
         }
       })
 
-      tl.to(title, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' })
-        .to('.service-card', { 
-          opacity: 1, 
-          y: 0, 
-          duration: 0.8, 
-          stagger: 0.2, 
-          ease: 'power3.out' 
-        }, '-=0.6')
+      if (tl) {
+        tl.to(title, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' })
+          .to(serviceCards, { 
+            opacity: 1, 
+            y: 0, 
+            duration: 0.8, 
+            stagger: 0.2, 
+            ease: 'power3.out' 
+          }, '-=0.6')
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      AnimationManager.cleanup(componentId)
     }
   }, [loading, services])
 

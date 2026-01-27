@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import configPromise from '../../../../payload.config'
 
@@ -58,7 +58,7 @@ export async function POST() {
     return NextResponse.json({
       success: false,
       error: 'Failed to create footer data',
-      details: error.message
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }

@@ -32,7 +32,7 @@ export interface Portfolio {
   slug: string;
   description: string;
   client: string;
-  category: 'web' | 'mobile' | 'analytics' | 'cloud';
+  category: string; // Made more flexible to accept any string
   technologies?: Technology[];
   featured: boolean;
   completedAt?: string;

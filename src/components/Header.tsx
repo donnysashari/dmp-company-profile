@@ -4,8 +4,15 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
+declare global {
+  interface Window {
+    pageTransition?: {
+      to: (href: string) => void;
+    };
+  }
+}
+
 export default function Header() {
-  const [isWorksOpen, setIsWorksOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
 
@@ -17,6 +24,31 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Handle body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMobileMenuOpen])
+
+  const handleTransitionTo = (href: string) => {
+    console.log('🚀 Attempting transition to:', href)
+    if (typeof window !== 'undefined' && window.pageTransition) {
+      console.log('✅ Using pageTransition.to()')
+      window.pageTransition.to(href)
+    } else {
+      console.log('❌ pageTransition not found, using fallback')
+      window.location.href = href
+    }
+  }
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 h-[100px] overflow-hidden transition-all duration-300 ${
@@ -32,22 +64,23 @@ export default function Header() {
           priority
         />
       </div>
-      
+
       <div className="max-w-[1440px] mx-auto px-5 md:px-20 h-full relative z-10">
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <svg width="81" height="44" viewBox="0 0 81 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <g clipPath="url(#clip0_697_3106)">
-                <path d="M20.6809 0C22.3465 2.91579e-07 23.6968 1.35193 23.6968 3.0196C23.6968 4.04565 23.1855 4.95194 22.4043 5.49761V14.4892C24.5084 12.4622 27.3681 11.2157 30.5186 11.2157C34.7908 11.2157 38.5281 13.5073 40.5718 16.9296C42.6155 13.5073 46.3528 11.2157 50.625 11.2157C54.9125 11.2157 58.6614 13.5238 60.7002 16.9666C62.5063 13.5464 66.0957 11.2157 70.2287 11.2157C76.1775 11.2157 81 16.044 81 22C81 27.956 76.1775 32.7843 70.2287 32.7843C67.1566 32.7843 64.3849 31.4965 62.4226 29.4308L62.3298 29.3317V38.609C63.0295 39.162 63.4787 40.0186 63.4787 40.9804C63.4787 42.6481 62.1284 44 60.4628 44C58.7971 44 57.4468 42.6481 57.4468 40.9804C57.4468 39.9543 57.9581 39.0481 58.7394 38.5024V22.9346C58.7394 18.3684 55.0421 14.6667 50.4814 14.6667C45.9207 14.6667 42.2234 18.3684 42.2234 22.9346V32.7843H38.9202V22.9346C38.9202 18.3684 35.2229 14.6667 30.6622 14.6667C26.1015 14.6667 22.4043 18.3684 22.4043 22.9346V32.7843H18.8138V29.1737C16.8411 31.3891 13.969 32.7843 10.7713 32.7843C4.82246 32.7843 -1.04012e-06 27.956 0 22C1.04013e-06 16.044 4.82246 11.2157 10.7713 11.2157C13.969 11.2157 16.8411 12.611 18.8138 14.8264V5.39103C18.1141 4.83806 17.6649 3.98141 17.6649 3.0196C17.6649 1.35192 19.0152 -2.91593e-07 20.6809 0ZM60.4628 38.766C59.2413 38.766 58.2511 39.7574 58.2511 40.9804C58.2511 42.2033 59.2413 43.1948 60.4628 43.1948C61.6842 43.1948 62.6745 42.2033 62.6745 40.9804C62.6745 39.7574 61.6842 38.766 60.4628 38.766ZM10.7713 14.0915C6.40881 14.0915 2.87234 17.6322 2.87234 22C2.87234 26.3678 6.40881 29.9085 10.7713 29.9085C15.1338 29.9085 18.6702 26.3678 18.6702 22C18.6702 17.6322 15.1338 14.0915 10.7713 14.0915ZM70.2287 14.0915C65.8662 14.0915 62.3298 17.6322 62.3298 22C62.3298 26.3678 65.8662 29.9085 70.2287 29.9085C74.5912 29.9085 78.1277 26.3678 78.1277 22C78.1277 17.6322 74.5912 14.0915 70.2287 14.0915ZM20.6809 0.805172C19.4594 0.805172 18.4692 1.79665 18.4692 3.0196C18.4692 4.24257 19.4594 5.23404 20.6809 5.23404C21.9023 5.23404 22.8926 4.24257 22.8926 3.0196C22.8926 1.79665 21.9023 0.805179 20.6809 0.805172Z" fill="#3094D6"/>
-                <path d="M0.332031 39.9739V36.8859H1.39443C1.63426 36.8859 1.81728 36.9008 1.94352 36.9302C2.12023 36.9709 2.271 37.0447 2.39583 37.1514C2.55852 37.289 2.67983 37.4653 2.75978 37.6801C2.84113 37.8935 2.8818 38.1378 2.8818 38.4132C2.8818 38.6475 2.85444 38.8555 2.79975 39.0365C2.74505 39.2177 2.67492 39.3679 2.58937 39.4873C2.50381 39.6053 2.40985 39.6986 2.30746 39.7674C2.20648 39.8348 2.08376 39.8861 1.93931 39.9212C1.79626 39.9563 1.63146 39.9739 1.44493 39.9739H0.332031ZM0.740162 39.6095H1.39864C1.602 39.6095 1.76119 39.5905 1.87619 39.5526C1.99261 39.5147 2.08517 39.4614 2.15389 39.3925C2.25066 39.2956 2.3257 39.1658 2.379 39.0028C2.43369 38.8385 2.46105 38.6399 2.46105 38.4068C2.46105 38.0837 2.40775 37.836 2.30116 37.6633C2.19597 37.4892 2.06764 37.3725 1.91616 37.3136C1.80677 37.2715 1.63075 37.2505 1.38812 37.2505H0.740162V39.6095ZM3.51502 39.9739V36.8859H3.92315V39.9739H3.51502ZM6.08794 38.7627V38.4005L7.39438 38.3983V39.5442C7.19382 39.7042 6.98694 39.825 6.77376 39.9064C6.56058 39.9865 6.34179 40.0265 6.11739 40.0265C5.81445 40.0265 5.53885 39.9619 5.2906 39.8328C5.04377 39.7021 4.85722 39.514 4.731 39.2683C4.60477 39.0225 4.54167 38.748 4.54167 38.4446C4.54167 38.1441 4.60407 37.864 4.7289 37.6043C4.85513 37.3431 5.03606 37.1492 5.27167 37.023C5.50729 36.8966 5.77869 36.8333 6.08582 36.8333C6.30883 36.8333 6.51008 36.8698 6.68961 36.9429C6.87053 37.0145 7.01218 37.1149 7.11457 37.2441C7.21695 37.3733 7.29479 37.5418 7.34809 37.7496L6.97993 37.8506C6.93364 37.6935 6.87615 37.5698 6.80741 37.4799C6.73869 37.3901 6.64052 37.3185 6.5129 37.2651C6.38527 37.2103 6.24362 37.183 6.08794 37.183C5.90141 37.183 5.74011 37.2118 5.60406 37.2693C5.46803 37.3255 5.35793 37.4 5.27377 37.4926C5.19103 37.5853 5.12651 37.6872 5.08023 37.798C5.00169 37.989 4.96242 38.1962 4.96242 38.4193C4.96242 38.6947 5.0094 38.9249 5.10337 39.1102C5.19875 39.2956 5.33689 39.4332 5.51782 39.5231C5.69873 39.6129 5.89088 39.6579 6.09424 39.6579C6.27096 39.6579 6.44347 39.6242 6.61176 39.5569C6.78007 39.488 6.9077 39.4149 6.99466 39.3377V38.7627H6.08794ZM8.06758 39.9739V36.8859H8.47571V39.9739H8.06758ZM9.982 39.9739V37.2505H8.96588V36.8859H11.4105V37.2505H10.3901V39.9739H9.982ZM11.1727 39.9739L12.3571 36.8859H12.7968L14.0591 39.9739H13.5942L13.2344 39.0386H11.9448L11.6061 39.9739H11.1727ZM12.0626 38.7059H13.1082L12.7863 37.8506C12.6881 37.591 12.6152 37.3774 12.5675 37.2103C12.5283 37.4083 12.4729 37.6049 12.4013 37.8002L12.0626 38.7059ZM14.3684 39.9739V36.8859H14.7765V39.6095H16.2954V39.9739H14.3684ZM17.8102 39.9739V36.8859H18.4244L19.1544 39.0723C19.2218 39.2759 19.2709 39.4283 19.3016 39.5294C19.3368 39.4171 19.3914 39.252 19.4658 39.0345L20.2043 36.8859H20.7533V39.9739H20.3599V37.3894L19.4636 39.9739H19.0955L18.2035 37.3452V39.9739H17.8102ZM21.073 39.9739L22.2574 36.8859H22.6972L23.9594 39.9739H23.4945L23.1348 39.0386H21.8451L21.5064 39.9739H21.073ZM21.963 38.7059H23.0085L22.6867 37.8506C22.5884 37.591 22.5155 37.3774 22.4678 37.2103C22.4286 37.4083 22.3732 37.6049 22.3016 37.8002L21.963 38.7059ZM24.2981 39.9739V36.8859H24.7062V38.154H26.3093V36.8859H26.7174V39.9739H26.3093V38.5184H24.7062V39.9739H24.2981ZM27.0604 39.9739L28.2448 36.8859H28.6844L29.9468 39.9739H29.4818L29.122 39.0386H27.8325L27.4937 39.9739H27.0604ZM27.9502 38.7059H28.9958L28.6739 37.8506C28.5758 37.591 28.5029 37.3774 28.4552 37.2103C28.4158 37.4083 28.3606 37.6049 28.289 37.8002L27.9502 38.7059ZM30.2728 39.9739V36.8859H31.3351C31.575 36.8859 31.7581 36.9008 31.8843 36.9302C32.061 36.9709 32.2118 37.0447 32.3366 37.1514C32.4993 37.289 32.6207 37.4653 32.7005 37.6801C32.7819 37.8935 32.8226 38.1378 32.8226 38.4132C32.8226 38.6475 32.7952 38.8555 32.7406 39.0365C32.6859 39.2177 32.6156 39.3679 32.5302 39.4873C32.4446 39.6053 32.3507 39.6986 32.2483 39.7674C32.1473 39.8348 32.0245 39.8861 31.88 39.9212C31.737 39.9563 31.5723 39.9739 31.3857 39.9739H30.2728ZM30.681 39.6095H31.3395C31.5428 39.6095 31.7019 39.5905 31.817 39.5526C31.9335 39.5147 32.0259 39.4614 32.0947 39.3925C32.1914 39.2956 32.2665 39.1658 32.3198 39.0028C32.3745 38.8385 32.4018 38.6399 32.4018 38.4068C32.4018 38.0837 32.3485 37.836 32.2419 37.6633C32.1368 37.4892 32.0084 37.3725 31.8569 37.3136C31.7476 37.2715 31.5715 37.2505 31.329 37.2505H30.681V39.6095ZM33.0476 39.9739L34.232 36.8859H34.6718L35.9341 39.9739H35.4692L35.1094 39.0386H33.8197L33.4811 39.9739H33.0476ZM33.9376 38.7059H34.9832L34.6613 37.8506C34.5631 37.591 34.4901 37.3774 34.4424 37.2103C34.4032 37.4083 34.3478 37.6049 34.2763 37.8002L33.9376 38.7059ZM36.7251 39.9739V37.2505H35.709V36.8859H38.1535V37.2505H37.1333V39.9739H36.7251ZM37.9158 39.9739L39.1002 36.8859H39.5398L40.8021 39.9739H40.3372L39.9774 39.0386H38.6879L38.3491 39.9739H37.9158ZM38.8057 38.7059H39.8512L39.5294 37.8506C39.4313 37.591 39.3583 37.3774 39.3106 37.2103C39.2713 37.4083 39.216 37.6049 39.1443 37.8002L38.8057 38.7059ZM42.0876 39.9739V36.8859H43.2509C43.4557 36.8859 43.6121 36.8959 43.7201 36.9154C43.8716 36.9407 43.9984 36.9892 44.1008 37.0608C44.2032 37.131 44.2852 37.23 44.347 37.3579C44.4102 37.4856 44.4416 37.626 44.4416 37.779C44.4416 38.0416 44.3582 38.2642 44.1913 38.4468C44.0244 38.628 43.7228 38.7186 43.2867 38.7186H42.4956V39.9739H42.0876ZM42.4956 38.3541H43.293C43.5567 38.3541 43.7439 38.305 43.8547 38.2067C43.9655 38.1083 44.021 37.97 44.021 37.7917C44.021 37.6626 43.9879 37.5523 43.922 37.461C43.8575 37.3684 43.7719 37.3073 43.6654 37.2778C43.5966 37.2595 43.4698 37.2505 43.2847 37.2505H42.4956V38.3541ZM44.9676 39.9739V36.8859H46.3351C46.61 36.8859 46.8189 36.9141 46.962 36.9702C47.105 37.025 47.2193 37.1226 47.3049 37.263C47.3904 37.4035 47.4332 37.5586 47.4332 37.7286C47.4332 37.9476 47.3624 38.1322 47.2208 38.2824C47.079 38.4327 46.8603 38.5282 46.5644 38.5689C46.6723 38.6209 46.7544 38.6721 46.8105 38.7227C46.9297 38.8323 47.0427 38.9692 47.1492 39.1334L47.6857 39.9739H47.1724L46.7642 39.3314C46.645 39.1461 46.5468 39.0043 46.4697 38.9059C46.3925 38.8077 46.3232 38.7388 46.2614 38.6996C46.2011 38.6602 46.1395 38.6329 46.0763 38.6173C46.03 38.6076 45.9542 38.6027 45.8491 38.6027H45.3757V39.9739H44.9676ZM45.3757 38.2488H46.2531C46.4395 38.2488 46.5854 38.2298 46.6905 38.1919C46.7958 38.1526 46.8757 38.0908 46.9304 38.0065C46.9851 37.921 47.0125 37.8282 47.0125 37.7286C47.0125 37.5825 46.9592 37.4624 46.8525 37.3684C46.7474 37.2743 46.5805 37.2272 46.3519 37.2272H45.3757V38.2488ZM48.1442 39.9739V36.8859H48.5524V39.9739H48.1442ZM49.2614 39.9739V36.8859H49.8757L50.6057 39.0723C50.673 39.2759 50.7222 39.4283 50.753 39.5294C50.7881 39.4171 50.8428 39.252 50.917 39.0345L51.6555 36.8859H52.2046V39.9739H51.8112V37.3894L50.9149 39.9739H50.5468L49.6548 37.3452V39.9739H49.2614ZM52.5244 39.9739L53.7088 36.8859H54.1484L55.4107 39.9739H54.9458L54.586 39.0386H53.2965L52.9577 39.9739H52.5244ZM53.4143 38.7059H54.4598L54.1379 37.8506C54.0397 37.591 53.9667 37.3774 53.9191 37.2103C53.8799 37.4083 53.8244 37.6049 53.7529 37.8002L53.4143 38.7059Z" fill="#3094D6"/>
-              </g>
-              <defs>
-                <clipPath id="clip0_697_3106">
-                  <rect width="81" height="44" fill="white"/>
-                </clipPath>
-              </defs>
-            </svg>
+          <Link 
+            href="/" 
+            className="flex items-center"
+            onClick={(e) => { e.preventDefault(); handleTransitionTo('/') }}
+          >
+            <Image
+              src="/api/media/file/Logo-DigitalMahadataPrima.png"
+              alt="Digital Mahadata Prima"
+              width={120}
+              height={60}
+              className="h-12 w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -55,81 +88,61 @@ export default function Header() {
             {/* HOME */}
             <Link 
               href="/" 
-              className="flex items-center gap-[5px] h-16 justify-center"
+              className="flex items-center gap-[5px] h-16 justify-center relative group"
+              onClick={(e) => { e.preventDefault(); handleTransitionTo('/') }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9765 4.02355 15.2 8 15.2C11.9765 15.2 15.2 11.9765 15.2 8C15.2 4.02355 11.9765 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="#4C5C6E"/>
+                <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9764 4.02355 15.2 8 15.2C11.9764 15.2 15.2 11.9764 15.2 8C15.2 4.02355 11.9764 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="black"/>
               </svg>
-              <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">HOME</span>
+              <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">BERANDA</span>
+              
+              {/* Hover Circle Background */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-[#2082BE] opacity-0 group-hover:opacity-100 transition-all duration-300 scale-0 group-hover:scale-100 pointer-events-none"></div>
             </Link>
 
-            {/* WORKS */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsWorksOpen(!isWorksOpen)}
-                className="flex items-center gap-[5px] h-16"
-                onMouseEnter={() => setIsWorksOpen(true)}
-                onMouseLeave={() => setIsWorksOpen(false)}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9765 4.02355 15.2 8 15.2C11.9765 15.2 15.2 11.9765 15.2 8C15.2 4.02355 11.9765 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="#4C5C6E"/>
-                </svg>
-                <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">WORKS</span>
-                <svg width="16" height="8" viewBox="0 0 16 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <g clipPath="url(#clip0_697_3140)">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M8.47377 6.77133L12.2451 3L11.3024 2.05733L8.00243 5.35733L4.70243 2.05733L3.75977 3L7.5311 6.77133C7.65612 6.89631 7.82566 6.96652 8.00243 6.96652C8.17921 6.96652 8.34875 6.89631 8.47377 6.77133Z" fill="#4C5C6E"/>
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_697_3140">
-                      <rect width="8" height="16" fill="white" transform="matrix(-4.37114e-08 1 1 4.37114e-08 3.4969e-07 0)"/>
-                    </clipPath>
-                  </defs>
-                </svg>
-              </button>
+            {/* PORTOFOLIO */}
+            <Link 
+              href="/portfolio" 
+              className="flex items-center gap-[5px] h-16 justify-center relative group"
+              onClick={(e) => { e.preventDefault(); handleTransitionTo('/portfolio') }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9764 4.02355 15.2 8 15.2C11.9764 15.2 15.2 11.9764 15.2 8C15.2 4.02355 11.9764 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="black"/>
+              </svg>
+              <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">PORTOFOLIO</span>
               
-              {/* Dropdown Menu */}
-              {isWorksOpen && (
-                <div 
-                  className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg py-2 min-w-[160px]"
-                  onMouseEnter={() => setIsWorksOpen(true)}
-                  onMouseLeave={() => setIsWorksOpen(false)}
-                >
-                  <Link 
-                    href="/portfolio" 
-                    className="block px-4 py-2 text-sm text-[#4C5C6E] hover:bg-gray-50 font-plus-jakarta"
-                  >
-                    Portfolio
-                  </Link>
-                  <Link 
-                    href="/services" 
-                    className="block px-4 py-2 text-sm text-[#4C5C6E] hover:bg-gray-50 font-plus-jakarta"
-                  >
-                    Services
-                  </Link>
-                </div>
-              )}
-            </div>
+              {/* Hover Circle Background */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-[#2082BE] opacity-0 group-hover:opacity-100 transition-all duration-300 scale-0 group-hover:scale-100 pointer-events-none"></div>
+            </Link>
 
             {/* ABOUT */}
             <Link 
               href="/about" 
-              className="flex items-center gap-[5px] h-16 justify-center"
+              className="flex items-center gap-[5px] h-16 justify-center relative group"
+              onClick={(e) => { e.preventDefault(); handleTransitionTo('/about') }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9765 4.02355 15.2 8 15.2C11.9765 15.2 15.2 11.9765 15.2 8C15.2 4.02355 11.9765 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="#4C5C6E"/>
+                <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9764 4.02355 15.2 8 15.2C11.9764 15.2 15.2 11.9764 15.2 8C15.2 4.02355 11.9764 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="black"/>
               </svg>
-              <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">ABOUT</span>
+              <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">TENTANG</span>
+              
+              {/* Hover Circle Background */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-[#2082BE] opacity-0 group-hover:opacity-100 transition-all duration-300 scale-0 group-hover:scale-100 pointer-events-none"></div>
             </Link>
 
             {/* CONTACT */}
             <Link 
               href="/contact" 
-              className="flex items-center gap-[5px] h-16 justify-center"
+              className="flex items-center gap-[5px] h-16 justify-center relative group"
+              onClick={(e) => { e.preventDefault(); handleTransitionTo('/contact') }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9765 4.02355 15.2 8 15.2C11.9765 15.2 15.2 11.9765 15.2 8C15.2 4.02355 11.9765 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="#4C5C6E"/>
+                <path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM0.8 8C0.8 11.9764 4.02355 15.2 8 15.2C11.9764 15.2 15.2 11.9764 15.2 8C15.2 4.02355 11.9764 0.8 8 0.8C4.02355 0.8 0.8 4.02355 0.8 8Z" fill="black"/>
               </svg>
-              <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">CONTACT</span>
+              <span className="font-plus-jakarta text-xs font-normal text-[#4C5C6E]">KONTAK</span>
+              
+              {/* Hover Circle Background */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-[#2082BE] opacity-0 group-hover:opacity-100 transition-all duration-300 scale-0 group-hover:scale-100 pointer-events-none"></div>
             </Link>
           </nav>
 
@@ -144,56 +157,61 @@ export default function Header() {
             <Link 
               href="/contact"
               className="inline-flex items-center justify-center gap-[10px] px-5 py-4 rounded-[100px] bg-gradient-to-br from-[#9FD4FF] to-[#47A6F1] shadow-[0_5px_5px_0_rgba(32,130,190,0.1),0_-5px_5px_0_rgba(255,255,255,0.1)_inset,0_5px_5px_1px_rgba(255,255,255,0.1)_inset] h-[52px] transition-transform hover:scale-105"
+              onClick={(e) => { e.preventDefault(); handleTransitionTo('/contact') }}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16.625 17.5C14.8889 17.5 13.1736 17.1217 11.4792 16.365C9.78472 15.6083 8.24306 14.5353 6.85417 13.1458C5.46528 11.7564 4.3925 10.2147 3.63583 8.52083C2.87917 6.82694 2.50056 5.11167 2.5 3.375C2.5 3.125 2.58333 2.91667 2.75 2.75C2.91667 2.58333 3.125 2.5 3.375 2.5H6.75C6.94444 2.5 7.11806 2.56611 7.27083 2.69833C7.42361 2.83056 7.51389 2.98667 7.54167 3.16667L8.08333 6.08333C8.11111 6.30556 8.10417 6.49306 8.0625 6.64583C8.02083 6.79861 7.94444 6.93056 7.83333 7.04167L5.8125 9.08333C6.09028 9.59722 6.42 10.0936 6.80167 10.5725C7.18333 11.0514 7.60361 11.5133 8.0625 11.9583C8.49306 12.3889 8.94444 12.7883 9.41667 13.1567C9.88889 13.525 10.3889 13.8617 10.9167 14.1667L12.875 12.2083C13 12.0833 13.1633 11.9897 13.365 11.9275C13.5667 11.8653 13.7644 11.8478 13.9583 11.875L16.8333 12.4583C17.0278 12.5139 17.1875 12.6147 17.3125 12.7608C17.4375 12.9069 17.5 13.07 17.5 13.25V16.625C17.5 16.875 17.4167 17.0833 17.25 17.25C17.0833 17.4167 16.875 17.5 16.625 17.5Z" fill="white"/>
+                <path fillRule="evenodd" clipRule="evenodd" d="M1 4C1 3.44772 1.44772 3 2 3H18C18.5523 3 19 3.44772 19 4V16C19 16.5523 18.5523 17 18 17H2C1.44772 17 1 16.5523 1 16V4ZM2 5.41421L10 9.41421L18 5.41421V4H2V5.41421ZM2 16V7.58579L7.29289 10.2929C8.06863 10.6886 11.9314 10.6886 12.7071 10.2929L18 7.58579V16H2Z" fill="white"/>
               </svg>
               <span className="font-plus-jakarta text-base font-medium text-white">Kontak Kami</span>
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
-          <button 
+          <button
+            className="lg:hidden relative w-6 h-6 flex flex-col justify-center items-center z-50"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden flex flex-col gap-1 w-6 h-6"
+            aria-label="Toggle menu"
           >
-            <span className={`block h-0.5 w-6 bg-[#4C5C6E] transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
-            <span className={`block h-0.5 w-6 bg-[#4C5C6E] transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
-            <span className={`block h-0.5 w-6 bg-[#4C5C6E] transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+            <span className={`block w-6 h-0.5 bg-gray-700 transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-0' : 'translate-y-[-4px]'}`} />
+            <span className={`block w-6 h-0.5 bg-gray-700 transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : 'opacity-100'}`} />
+            <span className={`block w-6 h-0.5 bg-gray-700 transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-[4px]'}`} />
           </button>
         </div>
+      </div>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden absolute left-0 right-0 top-[100px] bg-white border-t border-gray-200 shadow-lg">
-            <div className="flex flex-col py-4 px-5 gap-2">
-              <Link href="/" className="py-3 text-[#4C5C6E] font-plus-jakarta text-sm" onClick={() => setIsMobileMenuOpen(false)}>
-                HOME
+      {/* Mobile Menu */}
+      <div className={`lg:hidden fixed left-0 right-0 top-25 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg z-40 transition-all duration-300 ${
+        isMobileMenuOpen ? 'opacity-100 visible max-h-screen' : 'opacity-0 invisible max-h-0'
+      } overflow-hidden`}>
+        <div className="max-w-7xl mx-auto px-5 md:px-20">
+          <nav className="flex flex-col py-8">
+            <Link href="/" className="py-4 text-gray-700 text-lg hover:text-blue-600 transition-colors" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleTransitionTo('/') }}>
+              Beranda
+            </Link>
+            <Link href="/portfolio" className="py-4 text-gray-700 text-lg hover:text-blue-600 transition-colors" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleTransitionTo('/portfolio') }}>
+              Portofolio
+            </Link>
+            <Link href="/about" className="py-4 text-gray-700 text-lg hover:text-blue-600 transition-colors" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleTransitionTo('/about') }}>
+              Tentang
+            </Link>
+            <Link href="/services" className="py-4 text-gray-700 text-lg hover:text-blue-600 transition-colors" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleTransitionTo('/services') }}>
+              Layanan
+            </Link>
+            <Link href="/contact" className="py-4 text-gray-700 text-lg hover:text-blue-600 transition-colors" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleTransitionTo('/contact') }}>
+              Kontak
+            </Link>
+            
+            <div className="py-4">
+              <Link 
+                href="/contact"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white w-full transition-all duration-300"
+                onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleTransitionTo('/contact') }}
+              >
+                <span className="text-base font-medium">Kontak Kami</span>
               </Link>
-              <Link href="/portfolio" className="py-3 text-[#4C5C6E] font-plus-jakarta text-sm" onClick={() => setIsMobileMenuOpen(false)}>
-                WORKS
-              </Link>
-              <Link href="/about" className="py-3 text-[#4C5C6E] font-plus-jakarta text-sm" onClick={() => setIsMobileMenuOpen(false)}>
-                ABOUT
-              </Link>
-              <Link href="/contact" className="py-3 text-[#4C5C6E] font-plus-jakarta text-sm" onClick={() => setIsMobileMenuOpen(false)}>
-                CONTACT
-              </Link>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <Link 
-                  href="/contact"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-to-br from-[#9FD4FF] to-[#47A6F1] shadow-[0_5px_5px_0_rgba(32,130,190,0.1)] w-full"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.625 17.5C14.8889 17.5 13.1736 17.1217 11.4792 16.365C9.78472 15.6083 8.24306 14.5353 6.85417 13.1458C5.46528 11.7564 4.3925 10.2147 3.63583 8.52083C2.87917 6.82694 2.50056 5.11167 2.5 3.375C2.5 3.125 2.58333 2.91667 2.75 2.75C2.91667 2.58333 3.125 2.5 3.375 2.5H6.75C6.94444 2.5 7.11806 2.56611 7.27083 2.69833C7.42361 2.83056 7.51389 2.98667 7.54167 3.16667L8.08333 6.08333C8.11111 6.30556 8.10417 6.49306 8.0625 6.64583C8.02083 6.79861 7.94444 6.93056 7.83333 7.04167L5.8125 9.08333C6.09028 9.59722 6.42 10.0936 6.80167 10.5725C7.18333 11.0514 7.60361 11.5133 8.0625 11.9583C8.49306 12.3889 8.94444 12.7883 9.41667 13.1567C9.88889 13.525 10.3889 13.8617 10.9167 14.1667L12.875 12.2083C13 12.0833 13.1633 11.9897 13.365 11.9275C13.5667 11.8653 13.7644 11.8478 13.9583 11.875L16.8333 12.4583C17.0278 12.5139 17.1875 12.6147 17.3125 12.7608C17.4375 12.9069 17.5 13.07 17.5 13.25V16.625C17.5 16.875 17.4167 17.0833 17.25 17.25C17.0833 17.4167 16.875 17.5 16.625 17.5Z" fill="white"/>
-                  </svg>
-                  <span className="font-plus-jakarta text-base font-medium text-white">Kontak Kami</span>
-                </Link>
-              </div>
             </div>
-          </div>
-        )}
+          </nav>
+        </div>
       </div>
     </header>
   )

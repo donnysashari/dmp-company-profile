@@ -35,3 +35,18 @@ body {
 .font-figtree {
   font-family: var(--font-figtree), sans-serif;
 }
+
+/* SplitText Animation Styles */
+.split-parent {
+  overflow: hidden;
+}
+
+.split-child {
+  overflow: hidden;
+  display: inline-block;
+}
+
+.split-word {
+  display: inline-block;
+  overflow: hidden;
+}

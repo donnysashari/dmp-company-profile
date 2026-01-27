@@ -1,10 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-
-gsap.registerPlugin(ScrollTrigger)
+import { AnimationManager } from '@/lib/animation-utils'
 
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -13,15 +10,20 @@ export default function About() {
   const statsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const componentId = 'about-animations'
     const section = sectionRef.current
     const title = titleRef.current
     const content = contentRef.current
     const stats = statsRef.current
 
     if (section && title && content && stats) {
-      gsap.set([title, content, stats], { opacity: 0, y: 50 })
+      // Initialize elements with hidden state
+      AnimationManager.animateElement(title, { opacity: 0, y: 50 })
+      AnimationManager.animateElement(content, { opacity: 0, y: 50 })
+      AnimationManager.animateElement(stats, { opacity: 0, y: 50 })
 
-      const tl = gsap.timeline({
+      // Create main timeline with scroll trigger
+      const tl = AnimationManager.createTimeline(componentId, {
         scrollTrigger: {
           trigger: section,
           start: 'top 80%',
@@ -30,28 +32,39 @@ export default function About() {
         }
       })
 
-      tl.to(title, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' })
-        .to(content, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=0.6')
-        .to(stats, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=0.4')
+      if (tl) {
+        tl.to(title, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' })
+          .to(content, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=0.6')
+          .to(stats, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=0.4')
+      }
 
       // Animate stat numbers
       const statNumbers = stats.querySelectorAll('.stat-number')
       statNumbers.forEach((stat) => {
         const finalValue = parseInt(stat.textContent || '0')
-        gsap.fromTo(stat, 
-          { textContent: 0 },
-          {
-            textContent: finalValue,
-            duration: 2,
-            ease: 'power2.out',
-            snap: { textContent: 1 },
-            scrollTrigger: {
-              trigger: stat,
-              start: 'top 80%',
-            }
+        
+        AnimationManager.animateElement(stat as HTMLElement, {
+          textContent: 0,
+          duration: 2,
+          ease: 'power2.out',
+          snap: { textContent: 1 },
+          scrollTrigger: {
+            trigger: stat,
+            start: 'top 80%',
+          },
+          onUpdate: function() {
+            this.targets()[0].textContent = Math.round(this.progress() * finalValue)
+          },
+          onComplete: function() {
+            this.targets()[0].textContent = finalValue
           }
-        )
+        })
       })
+    }
+
+    // Cleanup function
+    return () => {
+      AnimationManager.cleanup(componentId)
     }
   }, [])
 
