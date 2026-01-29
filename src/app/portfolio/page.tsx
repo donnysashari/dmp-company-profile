@@ -1,162 +1,90 @@
 'use client'
 
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimationManager } from '@/lib/animation-utils'
 import Header from '@/components/Header'
 import PageHeader from '@/components/PageHeader'
 import SimpleFooter from '@/components/SimpleFooter'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Portfolio } from '@/types/portfolio'
 
-// Inline simple data hook to avoid import issues
+// Portfolio data hook
 function usePortfolioData() {
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<{docs: Portfolio[]} | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const hasLoadedRef = useRef(false)
 
-  const fallbackData = {
-    docs: [
-      {
-        id: 'mock-1',
-        title: 'Dashboard Analytics E-Commerce',
-        slug: 'ecommerce-analytics-dashboard',
-        description: 'Dashboard analytics real-time untuk jaringan retail besar dengan 500+ toko',
-        client: 'RetailMax Indonesia',
-        category: 'analytics',
-        technologies: [
-          { technology: 'React' },
-          { technology: 'Node.js' },
-          { technology: 'PostgreSQL' }
-        ],
-        featured: true,
-        completedAt: '2023-12-15'
-      },
-      {
-        id: 'mock-2',
-        title: 'Aplikasi Mobile Banking',
-        slug: 'banking-mobile-app',
-        description: 'Aplikasi mobile banking aman dengan autentikasi biometrik',
-        client: 'Bank Mandiri',
-        category: 'mobile',
-        technologies: [
-          { technology: 'React Native' },
-          { technology: 'Node.js' },
-          { technology: 'MongoDB' }
-        ],
-        featured: true,
-        completedAt: '2024-01-10'
-      }
-    ]
-  }
-
-  const fetchData = async () => {
-    if (hasLoadedRef.current) return
-    hasLoadedRef.current = true
-
-    setIsLoading(true)
-    
-    try {
-      const response = await fetch('/api/portfolio', {
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        setData(result)
-      } else {
-        throw new Error(`HTTP ${response.status}`)
-      }
-    } catch (err) {
-      console.warn('Using fallback portfolio data:', err)
-      setData(fallbackData)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
-    if (!hasLoadedRef.current) {
-      fetchData()
+    const fallbackData = {
+      docs: [
+        {
+          id: 'fallback-1',
+          title: 'Dashboard Analytics E-Commerce',
+          slug: 'ecommerce-analytics-dashboard',
+          description: 'Dashboard analytics real-time untuk jaringan retail besar dengan 500+ toko',
+          client: 'RetailMax Indonesia',
+          category: 'analytics',
+          technologies: [
+            { technology: 'React' },
+            { technology: 'D3.js' },
+            { technology: 'Python' }
+          ],
+          featured: true,
+          createdAt: '2023-12-15',
+          updatedAt: '2023-12-15'
+        },
+        {
+          id: 'fallback-2',
+          title: 'Aplikasi Mobile Banking',
+          slug: 'banking-mobile-app',
+          description: 'Aplikasi mobile banking aman dengan autentikasi biometrik',
+          client: 'Bank Mandiri',
+          category: 'mobile',
+          technologies: [
+            { technology: 'React Native' },
+            { technology: 'Node.js' }
+          ],
+          featured: true,
+          createdAt: '2023-11-15',
+          updatedAt: '2023-11-15'
+        }
+      ] as Portfolio[]
     }
+
+    const fetchData = async () => {
+      if (hasLoadedRef.current) return
+      hasLoadedRef.current = true
+
+      setIsLoading(true)
+      
+      try {
+        const response = await fetch('/api/portfolio', {
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          console.log('Portfolio API response:', result)
+          setData(result)
+        } else {
+          throw new Error(`HTTP ${response.status}`)
+        }
+      } catch (err) {
+        console.warn('Using fallback portfolio data:', err)
+        setData(fallbackData)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   return { data, isLoading }
 }
-import { Portfolio } from '@/types/portfolio'
-
-// Mock data as fallback - will be combined with Payload CMS data
-const mockPortfolioItems: Portfolio[] = [
-  {
-    id: 'mock-1',
-    title: 'Dashboard Analytics E-Commerce',
-    slug: 'ecommerce-analytics-dashboard',
-    description: 'Dashboard analytics real-time untuk jaringan retail besar dengan 500+ toko',
-    client: 'RetailMax Indonesia',
-    category: 'analytics',
-    technologies: [
-      { technology: 'React' },
-      { technology: 'D3.js' },
-      { technology: 'Python' },
-      { technology: 'AWS' }
-    ],
-    featured: true,
-    completedAt: '2023-12-15',
-    createdAt: '2023-12-15',
-    updatedAt: '2023-12-15'
-  },
-  {
-    id: 'mock-2',
-    title: 'Aplikasi Mobile Banking',
-    slug: 'banking-mobile-app',
-    description: 'Aplikasi mobile banking aman dengan autentikasi biometrik',
-    client: 'Bank Mandiri',
-    category: 'mobile',
-    technologies: [
-      { technology: 'React Native' },
-      { technology: 'Node.js' },
-      { technology: 'PostgreSQL' }
-    ],
-    featured: true,
-    createdAt: '2023-11-15',
-    updatedAt: '2023-11-15'
-  },
-  {
-    id: 'mock-3',
-    title: 'Migrasi Infrastruktur Cloud',
-    slug: 'cloud-migration-project',
-    description: 'Migrasi lengkap sistem legacy ke infrastruktur cloud',
-    client: 'PT Telkom Indonesia',
-    category: 'cloud',
-    technologies: [
-      { technology: 'AWS' },
-      { technology: 'Docker' },
-      { technology: 'Kubernetes' },
-      { technology: 'Terraform' }
-    ],
-    featured: false,
-    createdAt: '2023-10-15',
-    updatedAt: '2023-10-15'
-  },
-  {
-    id: 'mock-4',
-    title: 'Sistem Manajemen Rumah Sakit',
-    slug: 'healthcare-management-system',
-    description: 'Sistem manajemen rumah sakit komprehensif dengan portal pasien',
-    client: 'RS Siloam',
-    category: 'web',
-    technologies: [
-      { technology: 'Next.js' },
-      { technology: 'TypeScript' },
-      { technology: 'PostgreSQL' },
-      { technology: 'Redis' }
-    ],
-    featured: false,
-    createdAt: '2023-09-15',
-    updatedAt: '2023-09-15'
-  }
-]
 
 const categories = [
   { label: 'Semua Proyek', value: 'all' },
@@ -172,15 +100,11 @@ export default function PortfolioPage() {
   const [activeCategory, setActiveCategory] = useState('all')
 
   // Calculate filtered items based on category and data
-  const filteredItems = useMemo(() => {
-    if (!portfolioData?.docs) return []
-    
-    if (activeCategory === 'all') {
-      return portfolioData.docs
-    } else {
-      return portfolioData.docs.filter((item: Portfolio) => item.category === activeCategory)
-    }
-  }, [portfolioData?.docs, activeCategory])
+  const filteredItems = portfolioData?.docs ? 
+    (activeCategory === 'all' 
+      ? portfolioData.docs 
+      : portfolioData.docs.filter((item: Portfolio) => item.category === activeCategory)
+    ) : []
 
   // Filter portfolio items
   const filterItems = (category: string) => {
@@ -270,7 +194,15 @@ export default function PortfolioPage() {
                 <div className="portfolio-item group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer">
                   {/* Image */}
                   <div className="relative h-64 bg-gray-200 overflow-hidden">
-                    {item.featuredImage ? (
+                    {item.thumbnail ? (
+                      <Image 
+                        src={item.thumbnail.url} 
+                        alt={item.thumbnail.alt || item.title}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    ) : item.featuredImage ? (
                       <Image 
                         src={item.featuredImage.url} 
                         alt={item.featuredImage.alt || item.title}

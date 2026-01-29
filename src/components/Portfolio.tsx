@@ -3,49 +3,66 @@
 import { useEffect, useRef } from 'react'
 import { AnimationManager } from '@/lib/animation-utils'
 import Link from 'next/link'
+import Image from 'next/image'
+import Script from 'next/script'
+
+declare global {
+  interface Window {
+    gsap?: {
+      to: (target: any, vars: any) => void;
+    };
+  }
+}
 
 interface PortfolioItem {
   id: string
   number: string
   projectName: string
   category: string
+  year: string
 }
 
 export default function Portfolio() {
   const sectionRef = useRef<HTMLElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
   const itemsRef = useRef<HTMLDivElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   const portfolioItems: PortfolioItem[] = [
     {
-      id: '1',
+      id: 'p1',
       number: '01',
       projectName: 'MICE UNAIR',
-      category: 'AI, FACE RECOGNITION'
+      category: 'AI, FACE RECOGNITION',
+      year: '2024'
     },
     {
-      id: '2',
+      id: 'p2',
       number: '02',
       projectName: 'SIMKEU POLTEKBANG',
-      category: 'PAYMENT SOLUTION'
+      category: 'PAYMENT SOLUTION',
+      year: '2023'
     },
     {
-      id: '3',
+      id: 'p3',
       number: '03',
       projectName: 'SPADA INDONESIA',
-      category: 'LMS'
+      category: 'LMS',
+      year: '2023'
     },
     {
-      id: '4',
+      id: 'p4',
       number: '04',
       projectName: 'ROBODOCS MITRATEL',
-      category: 'RPA'
+      category: 'RPA',
+      year: '2022'
     },
     {
-      id: '5',
+      id: 'p5',
       number: '05',
       projectName: 'ELAMOS',
-      category: 'SOFTWARE DEV.'
+      category: 'SOFTWARE DEV.',
+      year: '2024'
     }
   ]
 
@@ -54,51 +71,207 @@ export default function Portfolio() {
     const section = sectionRef.current
     const header = headerRef.current
     const items = itemsRef.current
+    const preview = previewRef.current
 
-    if (section && header && items) {
-      // Initialize elements with hidden state
-      AnimationManager.animateElement(header, { opacity: 0, y: 30 })
-      
-      // Get all portfolio items and set initial state
-      const portfolioItems = items.querySelectorAll('.portfolio-item')
-      portfolioItems.forEach(item => {
-        AnimationManager.animateElement(item as HTMLElement, { opacity: 0, y: 30 })
-      })
-
-      // Create main timeline with scroll trigger
-      const tl = AnimationManager.createTimeline(componentId, {
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 80%',
-          toggleActions: 'play none none reverse'
-        }
-      })
-
-      if (tl) {
-        tl.to(header, { 
-          opacity: 1, 
-          y: 0, 
-          duration: 0.8, 
-          ease: 'power3.out' 
+    // Wait for GSAP to load
+    const initializeAnimations = () => {
+      if (section && header && items && preview && window.gsap) {
+        console.log('🎬 Initializing portfolio animations...')
+        
+        // Initialize elements with hidden state
+        AnimationManager.animateElement(header, { opacity: 0, y: 30 })
+        
+        // Get all portfolio items and set initial state
+        const portfolioItems = items.querySelectorAll('.portfolio-item')
+        portfolioItems.forEach(item => {
+          AnimationManager.animateElement(item as HTMLElement, { opacity: 0, y: 30 })
         })
-        .to(portfolioItems, { 
-          opacity: 1, 
-          y: 0, 
-          duration: 0.6, 
-          stagger: 0.1, 
-          ease: 'power3.out' 
-        }, '-=0.4')
+
+        // Create main timeline with scroll trigger
+        const tl = AnimationManager.createTimeline(componentId, {
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 80%',
+            toggleActions: 'play none none reverse'
+          }
+        })
+
+        if (tl) {
+          tl.to(header, { 
+            opacity: 1, 
+            y: 0, 
+            duration: 0.8, 
+            ease: 'power3.out' 
+          })
+          .to(portfolioItems, { 
+            opacity: 1, 
+            y: 0, 
+            duration: 0.6, 
+            stagger: 0.1, 
+            ease: 'power3.out' 
+          }, '-=0.4')
+        }
+
+        // Portfolio hover animation setup
+        const previewImg = preview.querySelector('.preview-img') as HTMLElement
+        let isInside = false
+
+        const bgPositions: { [key: string]: string } = {
+          p1: "0 0",
+          p2: "0 25%", 
+          p3: "0 50%",
+          p4: "0 75%",
+          p5: "0 100%",
+        }
+
+        const moveStuff = (e: MouseEvent) => {
+          const mouseInside = isMouseInsideContainer(e)
+          
+          if (mouseInside !== isInside) {
+            isInside = mouseInside
+            if (isInside) {
+              console.log('🖱️ Mouse entered portfolio area')
+              window.gsap.to(preview, { 
+                duration: 0.3,
+                scale: 1,
+                ease: "power2.out"
+              })
+            } else {
+              console.log('🖱️ Mouse left portfolio area')
+              window.gsap.to(preview, { 
+                duration: 0.3,
+                scale: 0,
+                ease: "power2.out"
+              })
+            }
+          }
+        }
+
+        const moveProject = (e: MouseEvent) => {
+          const previewRect = preview.getBoundingClientRect()
+          const offsetX = previewRect.width / 2
+          const offsetY = previewRect.height / 2
+          preview.style.left = (e.clientX - offsetX) + "px"
+          preview.style.top = (e.clientY - offsetY) + "px"
+        }
+
+        const moveProjectImg = (projectElement: HTMLElement) => {
+          const projectId = projectElement.id
+          console.log('🎨 Changing sprite to:', projectId, bgPositions[projectId])
+          if (previewImg && bgPositions[projectId]) {
+            window.gsap.to(previewImg, {
+              duration: 0.4,
+              backgroundPosition: bgPositions[projectId],
+              ease: "power2.out"
+            })
+          }
+        }
+
+        const isMouseInsideContainer = (e: MouseEvent): boolean => {
+          const containerRect = items.getBoundingClientRect()
+          return (
+            e.clientX >= containerRect.left &&
+            e.clientX <= containerRect.right &&
+            e.clientY >= containerRect.top &&
+            e.clientY <= containerRect.bottom
+          )
+        }
+
+        // Add global mousemove listener
+        const handleMouseMove = (e: MouseEvent) => {
+          moveStuff(e)
+          moveProject(e)
+        }
+
+        // Add event listeners
+        document.addEventListener("mousemove", handleMouseMove)
+
+        // Add hover listeners to each portfolio item (excluding header)
+        portfolioItems.forEach((project) => {
+          const projectElement = project as HTMLElement
+          if (projectElement.id && projectElement.id !== 'header') {
+            console.log('🎯 Adding hover listener to:', projectElement.id)
+            
+            projectElement.addEventListener("mouseenter", () => {
+              console.log('📝 Hovered over:', projectElement.id)
+              moveProjectImg(projectElement)
+            })
+            
+            projectElement.addEventListener("mouseleave", () => {
+              console.log('👋 Left:', projectElement.id)
+            })
+          }
+        })
+
+        // Cleanup function
+        return () => {
+          console.log('🧹 Cleaning up portfolio animations...')
+          AnimationManager.cleanup(componentId)
+          document.removeEventListener("mousemove", handleMouseMove)
+          portfolioItems.forEach((project) => {
+            const projectElement = project as HTMLElement
+            if (projectElement.id && projectElement.id !== 'header') {
+              // Remove the actual event listeners (need to store references for proper cleanup)
+              projectElement.removeEventListener("mouseenter", () => moveProjectImg(projectElement))
+              projectElement.removeEventListener("mouseleave", () => {})
+            }
+          })
+        }
       }
     }
 
-    // Cleanup function
-    return () => {
-      AnimationManager.cleanup(componentId)
+    // Check if GSAP is already loaded
+    if (window.gsap) {
+      const cleanup = initializeAnimations()
+      return cleanup
+    } else {
+      // Wait for GSAP to load
+      const interval = setInterval(() => {
+        if (window.gsap) {
+          console.log('✅ GSAP loaded, initializing animations...')
+          clearInterval(interval)
+          const cleanup = initializeAnimations()
+          return cleanup
+        }
+      }, 100)
+
+      return () => {
+        clearInterval(interval)
+      }
     }
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-16 md:py-20 lg:py-24 bg-white">
+    <>
+      <Script 
+        src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" 
+        strategy="afterInteractive"
+        onLoad={() => console.log('✅ GSAP loaded successfully')}
+        onError={() => console.error('❌ GSAP failed to load')}
+      />
+      <section ref={sectionRef} className="py-16 md:py-20 lg:py-24 bg-white">
+      {/* Preview Element for Hover Animation */}
+      <div 
+        ref={previewRef}
+        className="fixed w-64 h-64 overflow-hidden pointer-events-none z-50 rounded-lg"
+        style={{ 
+          transformOrigin: 'center',
+          transform: 'scale(0)',
+          left: '0px',
+          top: '0px'
+        }}
+      >
+        <div 
+          className="preview-img w-full h-full"
+          style={{
+            backgroundImage: 'url(/api/media/file/sprite.png)',
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: '0 0'
+          }}
+        ></div>
+      </div>
+
       <div className="container mx-auto px-5 md:px-20">
         {/* Header */}
         <div ref={headerRef} className="text-center mb-12 md:mb-16 lg:mb-20">
@@ -123,10 +296,38 @@ export default function Portfolio() {
 
         {/* Portfolio Items */}
         <div ref={itemsRef} className="max-w-6xl mx-auto mb-12 md:mb-16">
-          {portfolioItems.map((item, index) => (
+          {/* Header Row */}
+          <div className="portfolio-item border-t border-[#4C5C6E]" id="header">
+            <div className="grid grid-cols-12 gap-4 py-6 md:py-8 px-4 md:px-6">
+              <div className="col-span-2 md:col-span-1">
+                <span className="text-[#4C5C6E] font-figtree text-sm md:text-base opacity-50 uppercase">
+                  No.
+                </span>
+              </div>
+              <div className="col-span-4 md:col-span-4 lg:col-span-5">
+                <span className="text-[#4C5C6E] font-figtree text-sm md:text-base opacity-50 uppercase">
+                  Project
+                </span>
+              </div>
+              <div className="col-span-4 md:col-span-4 lg:col-span-3">
+                <span className="text-[#4C5C6E] font-figtree text-sm md:text-base opacity-50 uppercase">
+                  Category
+                </span>
+              </div>
+              <div className="col-span-2 md:col-span-3 lg:col-span-3 text-right">
+                <span className="text-[#4C5C6E] font-figtree text-sm md:text-base opacity-50 uppercase">
+                  Year
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Portfolio Items */}
+          {portfolioItems.map((item) => (
             <div 
               key={item.id}
-              className="portfolio-item border-t border-[#4C5C6E] hover:bg-gray-50 transition-colors duration-300"
+              className="portfolio-item border-t border-[#4C5C6E] hover:bg-gray-50 transition-colors duration-300 cursor-pointer"
+              id={item.id}
             >
               <div className="grid grid-cols-12 gap-4 py-6 md:py-8 px-4 md:px-6">
                 {/* Number */}
@@ -137,16 +338,23 @@ export default function Portfolio() {
                 </div>
 
                 {/* Project Name */}
-                <div className="col-span-10 md:col-span-6 lg:col-span-7">
+                <div className="col-span-4 md:col-span-4 lg:col-span-5">
                   <h3 className="text-[#4C5C6E] font-figtree text-xl md:text-2xl lg:text-3xl font-normal">
                     {item.projectName}
                   </h3>
                 </div>
 
                 {/* Category */}
-                <div className="col-span-12 md:col-span-5 lg:col-span-4 md:text-right">
-                  <span className="text-[#4C5C6E] font-figtree text-lg md:text-xl lg:text-3xl font-normal">
+                <div className="col-span-4 md:col-span-4 lg:col-span-3">
+                  <span className="text-[#4C5C6E] font-figtree text-lg md:text-xl lg:text-2xl font-normal">
                     {item.category}
+                  </span>
+                </div>
+
+                {/* Year */}
+                <div className="col-span-2 md:col-span-3 lg:col-span-3 text-right">
+                  <span className="text-[#4C5C6E] font-figtree text-lg md:text-xl lg:text-2xl font-normal">
+                    {item.year}
                   </span>
                 </div>
               </div>
@@ -162,11 +370,12 @@ export default function Portfolio() {
           <div className="relative rounded-2xl bg-white/20 overflow-hidden">
             <div className="grid md:grid-cols-2 gap-0">
               {/* Image */}
-              <div className="relative h-64 md:h-[500px] bg-[#D9D9D9] rounded-l-2xl overflow-hidden">
-                <img 
+              <div className="relative h-64 md:h-125 bg-[#D9D9D9] rounded-l-2xl overflow-hidden">
+                <Image 
                   src="https://api.builder.io/api/v1/image/assets/TEMP/25805b85ee9b7ab1a9bb9121e0ef8891b372b99b?width=1016"
                   alt="MICE UNAIR Project"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
 
@@ -191,5 +400,6 @@ export default function Portfolio() {
         </div>
       </div>
     </section>
+    </>
   )
 }

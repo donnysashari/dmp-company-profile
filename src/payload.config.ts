@@ -5,6 +5,7 @@ import { buildConfig } from 'payload'
 import { About } from './collections/About'
 import { Pages } from './collections/Pages'
 import { Footer } from './collections/Footer'
+import { Portfolio } from './collections/Portfolio-simple'
 // import { fileURLToPath } from 'url'
 
 // const filename = fileURLToPath(import.meta.url)
@@ -21,6 +22,7 @@ export default buildConfig({
     About,
     Pages,
     Footer,
+    Portfolio,
     // Users collection for admin authentication
     {
       slug: 'users',
@@ -43,127 +45,6 @@ export default buildConfig({
           ],
           defaultValue: 'editor',
           required: true,
-        },
-      ],
-    },
-    // Portfolio collection
-    {
-      slug: 'portfolio',
-      admin: {
-        useAsTitle: 'title',
-      },
-      fields: [
-        {
-          name: 'title',
-          type: 'text',
-          required: true,
-        },
-        {
-          name: 'slug',
-          type: 'text',
-          required: true,
-          unique: true,
-        },
-        {
-          name: 'description',
-          type: 'textarea',
-          required: true,
-        },
-        {
-          name: 'client',
-          type: 'text',
-          required: true,
-        },
-        {
-          name: 'category',
-          type: 'select',
-          options: [
-            { label: 'Web Development', value: 'web' },
-            { label: 'Mobile App', value: 'mobile' },
-            { label: 'Data Analytics', value: 'analytics' },
-            { label: 'Cloud Solutions', value: 'cloud' },
-          ],
-          required: true,
-        },
-        {
-          name: 'technologies',
-          type: 'array',
-          fields: [
-            {
-              name: 'technology',
-              type: 'text',
-            }
-          ],
-        },
-        {
-          name: 'featured',
-          type: 'checkbox',
-          defaultValue: false,
-        },
-        {
-          name: 'completedAt',
-          type: 'date',
-        },
-        {
-          name: 'projectUrl',
-          type: 'text',
-        },
-        {
-          name: 'challenge',
-          type: 'textarea',
-        },
-        {
-          name: 'solution',
-          type: 'textarea',
-        },
-        {
-          name: 'results',
-          type: 'array',
-          fields: [
-            {
-              name: 'result',
-              type: 'text',
-            }
-          ],
-        },
-        {
-          name: 'featuredImage',
-          type: 'relationship',
-          relationTo: 'media',
-        },
-        {
-          name: 'gallery',
-          type: 'array',
-          fields: [
-            {
-              name: 'image',
-              type: 'relationship',
-              relationTo: 'media',
-            }
-          ],
-        },
-        {
-          name: 'testimonial',
-          type: 'group',
-          fields: [
-            {
-              name: 'quote',
-              type: 'textarea',
-            },
-            {
-              name: 'author',
-              type: 'text',
-            },
-            {
-              name: 'position',
-              type: 'text',
-            },
-          ],
-        },
-        {
-          name: 'content',
-          type: 'richText',
-          editor: lexicalEditor({}),
         },
       ],
     },

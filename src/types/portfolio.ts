@@ -48,6 +48,14 @@ export interface Portfolio {
     width?: number;
     height?: number;
   };
+  thumbnail?: {
+    id: string;
+    alt?: string;
+    filename: string;
+    url: string;
+    width?: number;
+    height?: number;
+  };
   gallery?: GalleryImage[];
   testimonial?: Testimonial;
   content?: Record<string, unknown>; // Rich text content
